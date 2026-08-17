@@ -42,6 +42,7 @@ module alu_4b (
         op_sll: result = a << b[1:0];
         op_srl: result = a >> b[1:0];
         op_sra: result = $signed(a) >>> b[1:0];
+        defaut: result = 4'b0000;
         endcase
     end
 //Flag
