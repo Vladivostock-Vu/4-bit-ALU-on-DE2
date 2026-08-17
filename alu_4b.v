@@ -30,8 +30,6 @@ module alu_4b (
     
     assign adder_result = {1'b0, a} + {1'b0, (is_sub ? b : ~b)} + {4'b0, is_sub};
 //Operations
-    assign su
-    
     always @(*) begin
         case (opcode)
         op_add: result = adder_result[3:0]; 
