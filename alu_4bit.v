@@ -16,29 +16,88 @@ module alu_4b (
     localparam op_sra  = 4'b1001;  // Shift Right Arithmetically
 
 // Subsidiary signals
-    wire is_sub;             // Check if subtraction occurs (For sub, slt and sltu)
-    wire [4:0] adder_result; // 5-bit result of the adder
-
+    wire is_sub;                    // Check if subtraction occurs (For sub, slt and sltu)
+    wire [4:0] adder_result;        // 5-bit result of the adder
+    wire [4:0] a_sll, a_srl, a_sra; // Shifted a
+    wire a_sign;
+    wire b_sign;
+    
     assign is_sub = (opcode == op_sub) ||
                     (opcode == op_slt) ||
                     (opcode == op_sltu);
     
-assign adder_result = {a[3], a} + { (is_sub ? ~b[3] : b[3]), (is_sub ? ~b : b)} + {4'b0000, is_sub};    
+    assign adder_result = {a_sign, a} + (is_sub ? ~{b_sign, b} : {b_sign, b}) + {4'b0000, is_sub};    
+    
+    sll sll_inst(.a(a), .shamt(b[1:0]), .result(a_sll));
+    srl srl_inst(.a(a), .shamt(b[1:0]), .result(a_srl));
+    sra sra_inst(.a(a), .shamt(b[1:0]), .result(a_sra));  
+
+    assign a_sign = (opcode == op_sltu) ? 1'b0 : a[3];
+    assign b_sign = (opcode == op_sltu) ? 1'b0 : b[3];
 // Operations
     always @(*) begin
         case (opcode)
-            op_add:  result = adder_result[4:0]; 
-            op_sub:  result = adder_result[4:0];
+            op_add:  result = adder_result; 
+            op_sub:  result = adder_result;
             op_and:  result = {1'b0, a & b};
             op_or:   result = {1'b0, a | b};
             op_xor:  result = {1'b0, a ^ b};
-            op_slt:  result = {4'b0000, $signed(a) < $signed(b)};
-            op_sltu: result = {4'b0000, a < b};
-            op_sll:  result = {1'b0, a << b[1:0]};
-            op_srl:  result = {1'b0, a >> b[1:0]};
-            op_sra:  result = {1'b0, $signed(a) >>> b[1:0]};
+            op_slt:  result = {4'b0000, adder_result[4]};
+            op_sltu: result = {4'b0000, adder_result[4]};
+            op_sll:  result = a_sll;
+            op_srl:  result = a_srl;
+            op_sra:  result = a_sra;
             default: result = 5'b00000;
         endcase
     end
 
+endmodule
+
+//Internal modules
+module sll (
+    input [3:0] a,
+    input [1:0] shamt,
+    output reg [4:0] result
+);
+    always @(*) begin
+        case (shamt)
+            2'b00: result = {1'b0, a};
+            2'b01: result = {1'b0, a[2:0], 1'b0};
+            2'b10: result = {1'b0, a[1:0], 2'b00};
+            2'b11: result = {1'b0, a[0], 3'b000};
+            default: result = 5'b00000;
+        endcase
+    end
+endmodule
+
+module srl (
+    input [3:0] a,
+    input [1:0] shamt,
+    output reg [4:0] result
+);
+    always @(*) begin
+        case (shamt)
+            2'b00: result = {1'b0, a};
+            2'b01: result = {2'b00, a[3:1]};
+            2'b10: result = {3'b000, a[3:2]};
+            2'b11: result = {4'b0000, a[3]};
+            default: result = 5'b00000;
+        endcase
+    end
+endmodule
+
+module sra (
+    input [3:0] a,
+    input [1:0] shamt,
+    output reg [4:0] result
+);
+    always @(*) begin
+        case (shamt)
+            2'b00: result = {a[3], a};
+            2'b01: result = {2{a[3]}, a[3:1]};
+            2'b10: result = {3{a[3]}, a[3:2]};
+            2'b11: result = {5{a[3]}};
+            default: result = 5'b00000;
+        endcase
+    end
 endmodule
