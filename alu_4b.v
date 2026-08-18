@@ -28,7 +28,7 @@ module alu_4b (
                     (opcode == op_slt) ||
                     (opcode == op_sltu);
     
-    assign adder_result = {1'b0, a} + {1'b0, (is_sub ? b : ~b)} + {4'b0, is_sub};
+    assign adder_result = {1'b0, a} + {1'b0, (is_sub ? ~b : b)} + {4'b0, is_sub};
 //Operations
     always @(*) begin
         case (opcode)
