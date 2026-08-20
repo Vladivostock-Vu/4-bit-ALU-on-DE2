@@ -1,15 +1,15 @@
 module display_alu (
     input [3:0] a, b,
-    input [4:0] result,
+    input [7:0] result,
     output reg [13:0] seg_a, seg_b,         
     output reg [20:0] seg_result            
 );
 
     wire [3:0] a_unsigned, b_unsigned;
-    wire [4:0] result_unsigned;
+    wire [7:0] result_unsigned;
     assign a_unsigned = a[3] ? (~a + 1) : a;
     assign b_unsigned = b[3] ? (~b + 1) : b;
-    assign result_unsigned = result[4] ? (~result + 1) : result;
+    assign result_unsigned = result[7] ? (~result + 1) : result;
     wire [3:0] a_bcd, b_bcd;
     wire [7:0] result_bcd;
 
@@ -23,7 +23,7 @@ module display_alu (
         .bcd_out(b_bcd[3:0])
     );
 
-    binary_to_bcd #(.BIN_WIDTH(5), .BCD_DIGITS(2)) bcd_result (
+    binary_to_bcd #(.BIN_WIDTH(8), .BCD_DIGITS(2)) bcd_result (
         .bin_in(result_unsigned),
         .bcd_out(result_bcd[7:0])
     );
@@ -66,7 +66,7 @@ module display_alu (
 
     // Xử lý hiển thị cho result
     always @(*) begin
-        seg_result[20:14] = result[4] ? 7'b0111111 : 7'b1111111; // Dấu âm cho result
+        seg_result[20:14] = result[7] ? 7'b0111111 : 7'b1111111; // Dấu âm cho result
         
         // Hàng chục
         case (result_bcd[7:4])
