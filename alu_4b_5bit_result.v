@@ -29,7 +29,6 @@ module alu_4b (
                     (opcode == op_slt) ||
                     (opcode == op_sltu);
     
-    assign adder_result = {4{a_sign}, a} + (is_sub ? ~{4{b_sign}, b} : {4{b_sign}, b}) + {7'b0000000, is_sub};    
     
     sll sll_inst(.a(a), .shamt(b[1:0]), .result(a_sll));
     srl srl_inst(.a(a), .shamt(b[1:0]), .result(a_srl));
@@ -43,6 +42,9 @@ module alu_4b (
         .b(b),
         .result(mul_result)
     );
+    
+    assign adder_result = {4{a_sign}, a} + (is_sub ? ~{4{b_sign}, b} : {4{b_sign}, b}) + {7'b0000000, is_sub};    
+    
 // Operations
     always @(*) begin
         case (opcode)
