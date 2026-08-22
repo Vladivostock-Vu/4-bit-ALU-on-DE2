@@ -16,12 +16,17 @@ module alu_4b (
     localparam op_srl  = 4'b1000;  // Shift Right Logically
     localparam op_sra  = 4'b1001;  // Shift Right Arithmetically
     localparam op_mul  = 4'b1010;  // Multiplication
+    localparam op_div  = 4'b1011;  // Division
  
 // Subsidiary signals
     wire is_sub;                    // Check if subtraction occurs (For sub, slt and sltu)
+
     wire [7:0] adder_result;        // 8-bit result of the adder
     wire [7:0] a_sll, a_srl, a_sra; // Shifted a
     wire [7:0] mul_result;          // 8-bit result of multiplication
+    wire [7:0] div_result;          // 8-bit result of division
+    wire [7:0] div_remainder;       // 8-bit remainder of division
+    
     wire a_sign;
     wire b_sign;
     
@@ -42,6 +47,13 @@ module alu_4b (
         .b(b),
         .result(mul_result)
     );
+
+    div_4bit divider (
+        .a(a),
+        .b(b),
+        .result(div_result),
+        .remainder(div_remainder)
+    );
     
     assign adder_result = {4{a_sign}, a} + (is_sub ? ~{4{b_sign}, b} : {4{b_sign}, b}) + {7'b0000000, is_sub};    
     
@@ -59,61 +71,14 @@ module alu_4b (
             op_srl:  result = a_srl;
             op_sra:  result = a_sra;
             op_mul:  result = mul_result;
+            op_div:  result = div_result;
             default: result = 8'b00000000;
         endcase
 
         case(opcode)
+            op_div:  remainder = div_remainder;
             default: remainder = 8'b00000000;
         endcase
     end
 
-endmodule
-
-//Internal modules
-module sll (
-    input [3:0] a,
-    input [1:0] shamt,
-    output reg [7:0] result
-);
-    always @(*) begin
-        case (shamt)
-            2'b00: result = {4'b0, a};
-            2'b01: result = {4'b0, a[2:0], 1'b0};
-            2'b10: result = {4'b0, a[1:0], 2'b00};
-            2'b11: result = {4'b0, a[0], 3'b000};
-            default: result = 8'b00000000;
-        endcase
-    end
-endmodule
-
-module srl (
-    input [3:0] a,
-    input [1:0] shamt,
-    output reg [7:0] result
-);
-    always @(*) begin
-        case (shamt)
-            2'b00: result = {4'b0, a};
-            2'b01: result = {5'b00, a[3:1]};
-            2'b10: result = {6'b000, a[3:2]};
-            2'b11: result = {7'b0000, a[3]};
-            default: result = 8'b00000000;
-        endcase
-    end
-endmodule
-
-module sra (
-    input [3:0] a,
-    input [1:0] shamt,
-    output reg [7:0] result
-);
-    always @(*) begin
-        case (shamt)
-            2'b00: result = {4{a[3]}, a};
-            2'b01: result = {5{a[3]}, a[3:1]};
-            2'b10: result = {6{a[3]}, a[3:2]};
-            2'b11: result = {8{a[3]}};
-            default: result = 8'b00000000;
-        endcase
-    end
 endmodule
